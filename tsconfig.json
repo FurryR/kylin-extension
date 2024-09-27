@@ -27,7 +27,7 @@
     "checkJs": true,
     // "moduleResolution": "",
     // "esModuleInterop": true,
-    // "allowSyntheticDefaultImports": true,
+    "allowSyntheticDefaultImports": true,
     "types": [],
     "baseUrl": ".",
     "paths": {
