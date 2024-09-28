@@ -41,7 +41,8 @@ export default class Obfuscator {
             (block.mutation as any)?.isKylin === 'true'
           ) {
             result.isKylin = true
-            result.isObfuscated = (block.mutation as any)?.isObfuscated === 'false'
+            result.isObfuscated =
+              (block.mutation as any)?.isObfuscated === 'true'
             result.isCompiled = (block.mutation as any)?.isCompiled === 'true'
             result.uuid = InvisibleUUID.decrypt((block.mutation as any).uuid)
             if ((block.mutation as any).comment) {
@@ -59,7 +60,7 @@ export default class Obfuscator {
     return result
   }
   static addMeta(
-    json: any,
+    runtime: VM.Runtime,
     {
       uuid: projectUUID,
       comment,
@@ -72,18 +73,21 @@ export default class Obfuscator {
       isObfuscated: boolean
     }
   ) {
+    const sprites = new Set(runtime.targets.map(v => v.sprite))
     projectUUID = projectUUID ?? uuid.v4()
-    for (const target of json.targets) {
+    for (const sprite of sprites) {
       // 添加水印 / uuid
-      if (target.isStage) {
-        target.blocks[uid()] = {
+      if (sprite.clones[0].isStage) {
+        const id = uid()
+        sprite.blocks._blocks[id] = {
+          id,
           opcode: 'procedures_call',
-          next: null,
-          parent: null,
           inputs: {},
           fields: {},
-          shadow: true,
+          next: null,
           topLevel: true,
+          parent: null,
+          shadow: true,
           mutation: {
             tagName: 'mutation',
             isKylin: 'true',
@@ -95,53 +99,45 @@ export default class Obfuscator {
             proccode: '',
             argumentids: '[]',
             warp: 'true'
-          }
+          } as any
         }
+        sprite.blocks.resetCache()
         break
       }
     }
-    return { json, uuid: projectUUID, comment }
+    return { uuid: projectUUID, comment }
   }
-  static miscProtection(json: any) {
-    for (const target of json.targets) {
-      if (!target.isStage) {
+  static miscProtection(runtime: VM.Runtime) {
+    const sprites = new Set(runtime.targets.map(v => v.sprite))
+    for (const target of sprites) {
+      if (!target.clones[0].isStage) {
         target.name = '#modules/MiscProtection/' + target.name
       }
     }
-    return json
   }
-  static obfuscate(json: any) {
+  static obfuscate(runtime: VM.Runtime) {
     const obfuscatedSignatureMap = {}
     // id -> obfuscatedVarName
     const obfuscatedVariableName = {}
+    const sprites = new Set(runtime.targets.map(v => v.sprite))
 
-    for (const monitor of json.monitors) {
-      if (
-        ['data_variable', 'data_listcontents'].includes(monitor.opcode) &&
-        monitor.visible === true
-      ) {
-        obfuscatedVariableName[monitor.id] =
-          monitor.params.VARIABLE ?? monitor.params.LIST
-      }
-    }
-
-    for (const target of json.targets) {
+    for (const sprite of sprites) {
       // argument -> obfuscatedArgument
       const obfuscatedArgumentName = {}
-      const currentName = target.name
+      const currentName = sprite.name
       // // name -> obfuscatedCustomeName
       // const obfuscatedCostumeName = {}
 
       // 混淆角色名
-      if (!target.isStage) {
-        target.name = InvisibleUUID.random()
+      if (!sprite.clones[0].isStage) {
+        sprite.name = InvisibleUUID.random()
       }
 
       // signature -> obfuscatedSignature
-      const obfuscatedSignatureName = (obfuscatedSignatureMap[target.name] = {})
+      const obfuscatedSignatureName = (obfuscatedSignatureMap[currentName] = {})
 
       // 预先处理
-      for (const block of Object.values(target.blocks) as any) {
+      for (const block of Object.values(sprite.blocks._blocks)) {
         if (
           block.opcode === 'data_showvariable' ||
           block.opcode === 'data_showlist' ||
@@ -150,70 +146,66 @@ export default class Obfuscator {
         ) {
           // 它们是正常的，故不混淆。
           const field = block.fields.VARIABLE ?? block.fields.LIST
-          obfuscatedVariableName[field[1]] = field[0]
+          obfuscatedVariableName[field.id] = field.value
         }
       }
-      // 混淆变量名
-      for (const [id, variable] of Object.entries(target.variables)) {
+      // 混淆变量/列表名
+      for (const [id, variable] of Object.entries(sprite.clones[0].variables)) {
         if (!(id in obfuscatedVariableName)) {
-          if (variable[2]) {
+          if (variable.isCloud || variable.type === 'broadcast_msg') {
             // 云变量
-            obfuscatedVariableName[id] = variable[0]
+            obfuscatedVariableName[id] = variable.name
           } else obfuscatedVariableName[id] = InvisibleUUID.random()
         }
-        variable[0] = obfuscatedVariableName[id]
-      }
-      // 混淆列表名
-      for (const [id, list] of Object.entries(target.lists)) {
-        if (!(id in obfuscatedVariableName)) {
-          obfuscatedVariableName[id] = InvisibleUUID.random()
-        }
-        list[0] = obfuscatedVariableName[id]
+        variable.name = obfuscatedVariableName[id]
       }
       // 混淆代码
-      for (const [blockId, block] of Object.entries(target.blocks) as any) {
-        if (Array.isArray(block)) {
-          delete target.blocks[blockId]
+      for (const [blockId, block] of Object.entries(sprite.blocks._blocks)) {
+        if (!sprite.blocks.getBlock(blockId)) continue
+        if (
+          !block.parent &&
+          !runtime.getIsHat(block.opcode) &&
+          block.opcode !== 'procedures_definition'
+        ) {
+          // Block trim
+          ;(sprite.blocks as any).deleteBlock(block.id)
         } else {
           // 混淆积木位置
-          delete block.x
-          delete block.y
-          // block.x = Number.MAX_SAFE_INTEGER
-          // block.y = Number.MAX_SAFE_INTEGER
+          delete (block as any).x
+          delete (block as any).y
+
           block.shadow = true
           block.topLevel = true
           // 混淆下拉参数变量名称
           if (block.fields?.VARIABLE) {
-            block.fields.VARIABLE[0] =
-              obfuscatedVariableName[block.fields.VARIABLE[1]]
+            block.fields.VARIABLE.value =
+              obfuscatedVariableName[block.fields.VARIABLE.id]
           }
           // 混淆下拉参数列表名称
           if (block.fields?.LIST) {
-            block.fields.LIST[0] = obfuscatedVariableName[block.fields.LIST[1]]
+            block.fields.LIST.value =
+              obfuscatedVariableName[block.fields.LIST.id]
           }
           // 混淆参数变量/列表名称
-          if (block.inputs) {
-            for (const value of Object.values(block.inputs)) {
-              for (const member of value as any) {
-                if (member instanceof Array && member[0] === 12) {
-                  if (!(member[2] in obfuscatedVariableName)) {
-                    console.error(
-                      '❓ 处理时发生错误：不存在的变量',
-                      member[1],
-                      '，积木 id =',
-                      blockId,
-                      '，角色 =',
-                      currentName,
-                      '，变量 id =',
-                      member[2]
-                    )
-                  } else member[1] = obfuscatedVariableName[member[2]]
-                }
-              }
-            }
-          }
-          // 混淆自制积木显示
-          if (block.opcode === 'procedures_call' && block.mutation) {
+          if (
+            block.opcode === 'data_variable' ||
+            block.opcode === 'data_listcontents'
+          ) {
+            const variable = block.fields.LIST ?? block.fields.VARIABLE
+            if (!(variable.id in obfuscatedVariableName)) {
+              console.error(
+                '❓ Non-existent variable name',
+                variable.value,
+                ', block id =',
+                blockId,
+                ', sprite =',
+                currentName,
+                ', variable id =',
+                variable.id
+              )
+            } else variable.value = obfuscatedVariableName[variable.id]
+          } else if (block.opcode === 'procedures_call' && block.mutation) {
+            // 混淆自制积木显示
             if (!(block.mutation.proccode in obfuscatedSignatureName)) {
               obfuscatedSignatureName[block.mutation.proccode] =
                 Obfuscator.obfuscateProccode(block.mutation.proccode)
@@ -224,14 +216,18 @@ export default class Obfuscator {
             block.opcode === 'procedures_prototype' &&
             block.mutation
           ) {
-            block.mutation.argumentnames = JSON.stringify(
-              JSON.parse(block.mutation.argumentnames).map(original => {
-                if (!(original in obfuscatedArgumentName)) {
-                  obfuscatedArgumentName[original] = InvisibleUUID.random()
-                }
-                return obfuscatedArgumentName[original]
-              })
-            )
+            ;(block.mutation as VM.ProcedurePrototypeMutation).argumentnames =
+              JSON.stringify(
+                JSON.parse(
+                  (block.mutation as VM.ProcedurePrototypeMutation)
+                    .argumentnames
+                ).map(original => {
+                  if (!(original in obfuscatedArgumentName)) {
+                    obfuscatedArgumentName[original] = InvisibleUUID.random()
+                  }
+                  return obfuscatedArgumentName[original]
+                })
+              )
             if (!(block.mutation.proccode in obfuscatedSignatureName)) {
               obfuscatedSignatureName[block.mutation.proccode] =
                 Obfuscator.obfuscateProccode(block.mutation.proccode)
@@ -243,33 +239,39 @@ export default class Obfuscator {
             block.opcode === 'argument_reporter_boolean'
           ) {
             if (
-              !['is TurboWarp?', 'is compiled?'].includes(block.fields.VALUE[0])
+              !['is TurboWarp?', 'is compiled?'].includes(
+                block.fields.VALUE.value
+              )
             ) {
-              if (!(block.fields.VALUE[0] in obfuscatedArgumentName)) {
-                obfuscatedArgumentName[block.fields.VALUE[0]] =
+              if (!(block.fields.VALUE.value in obfuscatedArgumentName)) {
+                obfuscatedArgumentName[block.fields.VALUE.value] =
                   InvisibleUUID.random()
               }
-              block.fields.VALUE[0] =
-                obfuscatedArgumentName[block.fields.VALUE[0]]
+              block.fields.VALUE.value =
+                obfuscatedArgumentName[block.fields.VALUE.value]
             }
           }
         }
       }
       // 删除注释
-      for (const [id, value] of Object.entries(target.comments) as any) {
-        if (!target.isStage || !value.text.endsWith('// _twconfig_'))
-          delete target.comments[id]
+      for (const [id, value] of Object.entries(
+        sprite.clones[0].comments
+      ) as any) {
+        if (sprite.clones[0].isStage && value.text.endsWith('// _twconfig_'))
+          continue
+        delete sprite.clones[0].comments[id]
       }
+      sprite.blocks.resetCache()
     }
-    for (const monitor of json.monitors) {
-      if (monitor.opcode === 'data_variable') {
-        monitor.params.VARIABLE =
-          obfuscatedVariableName[monitor.id] ?? InvisibleUUID.random()
-      } else if (monitor.opcode === 'data_listcontents') {
-        monitor.params.LIST =
-          obfuscatedVariableName[monitor.id] ?? InvisibleUUID.random()
-      }
-    }
-    return { signatureMap: obfuscatedSignatureMap, json }
+    // TODO: monitor
+    // for (const monitor of json.monitors) {
+    //   if (monitor.opcode === 'data_variable') {
+    //     monitor.params.VARIABLE =
+    //       obfuscatedVariableName[monitor.id] ?? InvisibleUUID.random()
+    //   } else if (monitor.opcode === 'data_listcontents') {
+    //     monitor.params.LIST =
+    //       obfuscatedVariableName[monitor.id] ?? InvisibleUUID.random()
+    //   }
+    // }
   }
 }
