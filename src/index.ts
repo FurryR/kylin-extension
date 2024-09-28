@@ -592,7 +592,7 @@ import { minify } from 'terser'
               '---' as const,
               {
                 blockType: Scratch.BlockType.LABEL,
-                text: '✅ Obfuscated'
+                text: `${this.meta.isObfuscated ? '✅' : '❌'} Obfuscated`
               },
               {
                 blockType: Scratch.BlockType.LABEL,
