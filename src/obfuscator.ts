@@ -19,14 +19,16 @@ export default class Obfuscator {
   }
   static fetchMeta(targets: VM.Target[]) {
     let result: {
-      obfuscated: boolean
+      isKylin: boolean
       isCompiled: boolean
+      isObfuscated: boolean
       miscProtection: boolean
       uuid: string
       comment: string | null
     } = {
-      obfuscated: false,
+      isKylin: false,
       isCompiled: false,
+      isObfuscated: false,
       miscProtection: false,
       uuid: '',
       comment: null
@@ -38,7 +40,8 @@ export default class Obfuscator {
             block.opcode === 'procedures_call' &&
             (block.mutation as any)?.isKylin === 'true'
           ) {
-            result.obfuscated = true
+            result.isKylin = true
+            result.isObfuscated = (block.mutation as any)?.isObfuscated === 'false'
             result.isCompiled = (block.mutation as any)?.isCompiled === 'true'
             result.uuid = InvisibleUUID.decrypt((block.mutation as any).uuid)
             if ((block.mutation as any).comment) {
@@ -60,8 +63,14 @@ export default class Obfuscator {
     {
       uuid: projectUUID,
       comment,
-      isCompiled
-    }: { uuid?: string; comment?: string; isCompiled: boolean }
+      isCompiled,
+      isObfuscated
+    }: {
+      uuid?: string
+      comment?: string
+      isCompiled: boolean
+      isObfuscated: boolean
+    }
   ) {
     projectUUID = projectUUID ?? uuid.v4()
     for (const target of json.targets) {
@@ -79,6 +88,7 @@ export default class Obfuscator {
             tagName: 'mutation',
             isKylin: 'true',
             isCompiled: `${isCompiled}`,
+            isObfuscated: `${isObfuscated}`,
             uuid: InvisibleUUID.encrypt(projectUUID),
             ...(comment ? { comment: String(comment) } : {}),
             children: [],

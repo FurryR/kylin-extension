@@ -555,13 +555,15 @@ import { minify } from 'terser'
     private inputComment?: string
     private inputUUID?: string
     private meta: {
-      obfuscated: boolean
+      isKylin: boolean
+      isObfuscated: boolean
       isCompiled: boolean
       miscProtection: boolean
       uuid: string | null
       comment: string | null
     } = {
-      obfuscated: false,
+      isKylin: false,
+      isObfuscated: false,
       miscProtection: false,
       isCompiled: false,
       uuid: null,
@@ -580,7 +582,7 @@ import { minify } from 'terser'
         id: 'kylin',
         name: `🛠️ Kylin v${version}`,
         color1: '#00ffda',
-        blocks: this.meta.obfuscated
+        blocks: this.meta.isKylin
           ? [
               {
                 blockType: Scratch.BlockType.BUTTON,
@@ -696,15 +698,11 @@ import { minify } from 'terser'
       this.inputUUID = uuid.toLowerCase()
     }
     async start() {
-      if (!(this.enableCompile || this.enableMisc || this.enableObfuscate)) {
-        alert('Nothing to do.')
-        return
-      }
       const files = vm.saveProjectSb3DontZip()
       let projectJson = JSON.parse(
         new TextDecoder().decode(files['project.json'])
       )
-      let signatureMap
+      let signatureMap: Record<string, Record<string, string>>
       if (this.enableObfuscate) {
         const res = Obfuscator.obfuscate(projectJson)
         projectJson = res.json
@@ -715,6 +713,7 @@ import { minify } from 'terser'
         projectJson = await compile(projectJson, signatureMap)
 
       projectJson = Obfuscator.addMeta(projectJson, {
+        isObfuscated: this.enableObfuscate,
         isCompiled: this.enableCompile,
         comment: this.inputComment,
         uuid: this.inputUUID
