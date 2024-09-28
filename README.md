@@ -1,123 +1,46 @@
 <div align="center">
 
-# ⚡ scratch-ext
+# 🐉 Project Kylin
 
-> Scaffolding for Javascript/Typescript Scratch extensions.
+> Scratch Project Obfuscator in one click.
 
-[![Visitors](https://hits.dwyl.com/FurryR/scratch-ext.svg?style=flat-square)](http://github.com/FurryR/scratch-ext)
-
-[🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md)
+[🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md) | [🇯🇵](./README_ja-JP.md)
 
 </div>
 
-## 👾 Features
+Kylin is the first-ever obfuscator for Scratch (Turbowarp) that enables you to _encrypt_ your project, preventing it from being stolen or hacked.
 
-- 📄 Allows you writing in Typescript with type descriptions.
-- 🩷 Supports Turbowarp, Eureka, and Gandi IDE.
-- 😎 Out-of-box eslint (`npm run lint`) & prettier (`npm run format`) support.
-- 🐱 Auto-format to match Turbowarp's format.
-- 💫 Third-party module support & blazing-fast.
+It is extremely useful for packagers.
 
-## 🧪 Usage
+## Available features
 
-1. 🛠️ Use this template repository.
-2. 🔽 Clone and install.
+- Classical obfuscation. Mangles variables, lists and procedures, and then make them invisible.
+- Precompilation. Compiles entire project into uglified Javascript (terser), to make it impossible to recover (**may cause 10% performance decrease**). This obfuscation method is incompatible with some advanced extensions, such as `lpp`.
+- Additional miscellaneous protections (**anti-Gandi** protection, anti-saving protection working in progress).
+- Project signature. Adds an invisible "watermark" to your project to let you track them.
 
-```bash
-git clone git@github.com:<Your GitHub Username>/<Your Repository Name>.git <Extension Directory> && cd <Extension Directory>
-npm install
-```
+## How to use
 
-3. 🎉 Tada!
+After opening the project, navigate to `Custom Extension`. Click `Files`, and then select `kylin.js`. Make sure `Run without sandbox` is checked.
 
-## ❓ Something you need to change
+If the project is already obfuscated, you can view the project's metadata. Otherwise, you will be able to adjust obfuscation preferences. When everything is ready, click `Proceed` and Kylin will automatically load the obfuscated version into your editor.
 
-In `package.json`:
+**Once you clicked `Proceed` you will not be able to restore your project. Keep that in mind.**
 
-```javascript
-{
-  "name": "scratch-ext", // Replace this with your extension's name
-  "version": "1.0.0", // Replace this with your extension's version (or use `npm version major|minor|patch` to change)
-  "description": "Scaffolding for Javascript/Typescript Scratch extensions", // Replace this with your extension's description
-  "main": "dist/index.js",
-  "scripts": {
-    // ...
-  },
-  "author": "FurryR", // Replace this with your extension's author
-  "license": "MIT", // Replace this with your extension's license (MPL-2.0 is recommended)
-  "devDependencies": {
-    // ...
-  }
-}
-```
+## I lost my project! Are there any ways to recover?
 
-In `tsconfig.json`:
+**SAVE BEFORE CLICKING PROCEED!!!**
 
-```javascript
-{
-  "compilerOptions": {
-    // ...
-  },
-  "include": [
-    "node_modules/@turbowarp/types/types/scratch-vm-extension.d.ts",
-    "types/universal.d.ts",
-    "types/turbowarp.d.ts", // Add this for better experience on Turbowarp, plz remove it if you only want to write Gandi-only extensions
-    "types/gandi.d.ts", // Add this for better experience on Gandi IDE, plz remove it if you want to write Turbowarp-only extensions
-    "src/**/*",
-    "tsup.config.ts",
-    "package.json"
-  ]
-}
-```
+Unlike the packager, you cannot recover your project after obfuscation. If you lost your source project, please do not bother the developers.
 
-In `tsup.config.ts`:
+## Localization support
 
-```typescript
-import { defineConfig } from 'tsup'
+Available languages:
 
-export default defineConfig({
-  name: 'scratch-ext', // Replace it with your extension name
-  entry: ['src/index.ts', 'src/index.js'],
-  target: ['esnext'],
-  format: ['iife'],
-  outDir: 'dist',
-  banner: {
-    // Replace it with your extension's metadata (for Turbowarp)
-    js: `// Name: FurryR's example Extension
-// ID: newExtension
-// Description: Scaffolding for Advanced Scratch extensions.
-// By: You
-// Original: Me
-// License: MPL-2.0
-`
-  },
-  platform: 'browser',
-  clean: true
-})
-```
+- English (United States)
+- Japanese (Japan)
+- Simplified Chinese (China)
 
-## 🐺 Command shortcuts
+## License and Copyright
 
-### 🤖 Lint & Format
-
-- Check for typing: `npm run lint:type`
-- Check for format: `npm run lint:format` (Fix: `npm run format`)
-- Check for eslint: `npm run lint` (Fix: `npm run fix`)
-
-### 🛠️ Build
-
-- Build: `npm run build`
-- Build for Turbowarp (format to match its prettier): `npm run build:turbowarp`
-- Development server: `npm run start` (Extension: `http://localhost:8080/index.global.js`)
-
----
-
-<div align="center">
-
-_`This project is licensed under the MIT license.`_
-
-[NOTICE](./NOTICE.md)
-
-❤️
-
-</div>
+AGPL-3.0-only. Powered by Turbowarp compiler. Authored by FurryR, inspired by VeroFess. the name `Kylin` comes from one of my friends, `@F_Qilin` (https://x.com/F_Qilin) aka CyanKylin.

@@ -1,123 +1,46 @@
 <div align="center">
 
-# ⚡ scratch-ext
+# 🐉 Project Kylin
 
-> 适用于 Javascript/Typescript Scratch 扩展的脚手架。
+> Scratch 混淆器？拿来吧你！
 
-[![Visitors](https://hits.dwyl.com/FurryR/scratch-ext.svg?style=flat-square)](http://github.com/FurryR/scratch-ext)
-
-[🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md)
+[🇺🇸](./README.md) | [🇨🇳](./README_zh-CN.md) | [🇯🇵](./README_ja-JP.md)
 
 </div>
 
-## 👾 功能
+Kylin 是业界第一个用于 Scratch (Turbowarp) 的混淆器，允许你 _加密_ 你的项目，来避免它被盗或被破解。
 
-- 📄 允许你使用 Typescript 写扩展，并附有类型注释。
-- 🩷 支持 Turbowarp, Eureka 和 Gandi IDE。
-- 😎 开箱即用的 eslint (`npm run lint`) 和 prettier (`npm run format`) 支持。
-- 🐱 自动将扩展格式化到 Turbowarp 格式。
-- 💫 第三方模块支持 & 超高速打包。
+对于打包器来说非常有用。
 
-## 🧪 使用
+## 功能
 
-1. 🛠️ 使用此仓库作为模板。
-2. 🔽 克隆你的仓库，并安装依赖。
+- 传统混淆。将变量、列表和方法的名称变得不可读，并让它们隐形。
+- 预编译。将整个项目编译为最小化过的 Javascript (使用 terser)，来让它不可能被他人恢复 (**可能导致 10% 的性能损失**)。此混淆方法与以 `lpp` 为例的一些高级扩展不兼容。
+- 其它附加保护 (**反 Gandi IDE** 保护, 反保存保护正在编写中)。
+- 作品签名。为你的项目添加一个隐形的“水印”，这样你就可以跟踪项目了。
 
-```bash
-git clone git@github.com:<你的 GitHub 名称>/<你的 GitHub 仓库>.git <扩展目录> && cd <扩展目录>
-npm install
-```
+## 如何使用
 
-3. 🎉 好耶！
+打开你的项目之后，转到 `自定义扩展`。点击 `文件`，然后选择 `kylin.js`。请确保勾选了 `在非沙盒环境下运行`。
 
-## ❓ 你需要变更的一些东西
+如果项目已经被混淆，你可以通过扩展查看项目的元数据。若项目尚未被混淆，你将可以选择一些混淆选项。选择完成以后，点击 `混淆`，Kylin 就会自动在编辑器中加载混淆后的作品。
 
-在 `package.json` 中:
+**点击 `混淆` 以后，将无法还原原来的项目，请三思而后行。**
 
-```javascript
-{
-  "name": "scratch-ext", // 把这个改成你扩展的名字
-  "version": "1.0.0", // 把这个改成你扩展的版本 (你也可以使用 `npm version major|minor|patch` 来更改版本)
-  "description": "Scaffolding for Javascript/Typescript Scratch extensions", // 把这个改成你的扩展的说明
-  "main": "dist/index.js",
-  "scripts": {
-    // ...
-  },
-  "author": "FurryR", // 把这个改成你的扩展的作者
-  "license": "MIT", // 把这个改成你的扩展的开源协议 (推荐 MPL-2.0)
-  "devDependencies": {
-    // ...
-  }
-}
-```
+## 丢了作品怎么办？
 
-在 `tsconfig.json` 中:
+**点击混淆前先保存作品！！！**
 
-```javascript
-{
-  "compilerOptions": {
-    // ...
-  },
-  "include": [
-    "node_modules/@turbowarp/types/types/scratch-vm-extension.d.ts",
-    "types/universal.d.ts",
-    "types/turbowarp.d.ts", // 若需要 Turbowarp 上更好的体验，请保留这一行。如果你希望写仅适配 Gandi IDE 的扩展，请删除这一行。
-    "types/gandi.d.ts", // 若需要 Gandi IDE 上更好的体验，请保留这一行。如果你希望写仅适配 Turbowarp 的扩展，请删除这一行。
-    "src/**/*",
-    "tsup.config.ts",
-    "package.json"
-  ]
-}
-```
+不同于打包器，你无法在混淆后恢复你的项目。如果你丢了源文件，请不要打扰开发者，他们无法帮助你。
 
-在 `tsup.config.ts` 中:
+## 本地化支持
 
-```typescript
-import { defineConfig } from 'tsup'
+可用的语言：
 
-export default defineConfig({
-  name: 'scratch-ext', // 把这个改成你扩展的名字
-  entry: ['src/index.ts', 'src/index.js'],
-  target: ['esnext'],
-  format: ['iife'],
-  outDir: 'dist',
-  banner: {
-    // 把这个改成你扩展的元数据 (仅适用于 Turbowarp)
-    js: `// Name: FurryR 的测试扩展
-// ID: newExtension
-// Description: 为了高级 Scratch 扩展的脚手架。
-// By: 你
-// Original: 我
-// License: MPL-2.0
-`
-  },
-  platform: 'browser',
-  clean: true
-})
-```
+- 英语 (美国)
+- 日语 (日本)
+- 简体中文 (中国)
 
-## 🐺 快捷命令
+## 开源协议和著作权声明
 
-### 🤖 代码问题检查 & 格式化
-
-- 检查类型错误: `npm run lint:type`
-- 检查格式化问题: `npm run lint:format` (快捷修复: `npm run format`)
-- 检查代码风格（eslint）问题: `npm run lint` (快捷修复: `npm run fix`)
-
-### 🛠️ 构建
-
-- 构建: `npm run build`
-- 为 Turbowarp 构建 (自动格式化到匹配它的 prettier): `npm run build:turbowarp`
-- 开发服务器: `npm run start` (扩展位置: `http://localhost:8080/index.global.js`)
-
----
-
-<div align="center">
-
-_`此项目以 MIT 协议发行。`_
-
-[查看 NOTICE](./NOTICE_zh-CN.md)
-
-❤️
-
-</div>
+Kylin 以 AGPL-3.0-only 协议分发。基于 Turbowarp 编译器。作者 FurryR，启发自 VeroFess。`Kylin` 这个名字来自于我的一个朋友，`@F_Qilin` (https://x.com/F_Qilin)，又称 CyanKylin。
