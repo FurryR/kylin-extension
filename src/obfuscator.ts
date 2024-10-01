@@ -22,14 +22,12 @@ export default class Obfuscator {
       isKylin: boolean
       isCompiled: boolean
       isObfuscated: boolean
-      miscProtection: boolean
       uuid: string
       comment: string | null
     } = {
       isKylin: false,
       isCompiled: false,
       isObfuscated: false,
-      miscProtection: false,
       uuid: '',
       comment: null
     }
@@ -51,10 +49,7 @@ export default class Obfuscator {
             break
           }
         }
-      } else {
-        if (target.sprite.name.startsWith('#modules/MiscProtection/')) {
-          result.miscProtection = true
-        }
+        break
       }
     }
     return result
@@ -107,17 +102,9 @@ export default class Obfuscator {
     }
     return { uuid: projectUUID, comment }
   }
-  static miscProtection(runtime: VM.Runtime) {
-    const sprites = new Set(runtime.targets.map(v => v.sprite))
-    for (const target of sprites) {
-      if (!target.clones[0].isStage) {
-        target.name = '#modules/MiscProtection/' + target.name
-      }
-    }
-  }
   static obfuscate(runtime: VM.Runtime) {
     const obfuscatedSignatureMap = {}
-    // id -> obfuscatedVarName
+    // name -> obfuscatedVarName
     const obfuscatedVariableName = {}
     const sprites = new Set(runtime.targets.map(v => v.sprite))
 
@@ -125,13 +112,13 @@ export default class Obfuscator {
       // argument -> obfuscatedArgument
       const obfuscatedArgumentName = {}
       const currentName = sprite.name
-      // // name -> obfuscatedCustomeName
+      // name -> obfuscatedCustomeName
       // const obfuscatedCostumeName = {}
 
       // 混淆角色名
-      if (!sprite.clones[0].isStage) {
-        sprite.name = InvisibleUUID.random()
-      }
+      // if (!sprite.clones[0].isStage) {
+      //   sprite.name = InvisibleUUID.random()
+      // }
 
       // signature -> obfuscatedSignature
       const obfuscatedSignatureName = (obfuscatedSignatureMap[currentName] = {})
@@ -146,18 +133,18 @@ export default class Obfuscator {
         ) {
           // 它们是正常的，故不混淆。
           const field = block.fields.VARIABLE ?? block.fields.LIST
-          obfuscatedVariableName[field.id] = field.value
+          obfuscatedVariableName[field.value] = field.value
         }
       }
       // 混淆变量/列表名
-      for (const [id, variable] of Object.entries(sprite.clones[0].variables)) {
-        if (!(id in obfuscatedVariableName)) {
+      for (const variable of Object.values(sprite.clones[0].variables)) {
+        if (!(variable.name in obfuscatedVariableName)) {
           if (variable.isCloud || variable.type === 'broadcast_msg') {
             // 云变量
-            obfuscatedVariableName[id] = variable.name
-          } else obfuscatedVariableName[id] = InvisibleUUID.random()
+            obfuscatedVariableName[variable.name] = variable.name
+          } else obfuscatedVariableName[variable.name] = InvisibleUUID.random()
         }
-        variable.name = obfuscatedVariableName[id]
+        variable.name = obfuscatedVariableName[variable.name]
       }
       // 混淆代码
       for (const [blockId, block] of Object.entries(sprite.blocks._blocks)) {
@@ -179,32 +166,33 @@ export default class Obfuscator {
           // 混淆下拉参数变量名称
           if (block.fields?.VARIABLE) {
             block.fields.VARIABLE.value =
-              obfuscatedVariableName[block.fields.VARIABLE.id]
+              obfuscatedVariableName[block.fields.VARIABLE.value]
           }
           // 混淆下拉参数列表名称
           if (block.fields?.LIST) {
             block.fields.LIST.value =
-              obfuscatedVariableName[block.fields.LIST.id]
+              obfuscatedVariableName[block.fields.LIST.value]
           }
           // 混淆参数变量/列表名称
-          if (
-            block.opcode === 'data_variable' ||
-            block.opcode === 'data_listcontents'
-          ) {
-            const variable = block.fields.LIST ?? block.fields.VARIABLE
-            if (!(variable.id in obfuscatedVariableName)) {
-              console.error(
-                '❓ Non-existent variable name',
-                variable.value,
-                ', block id =',
-                blockId,
-                ', sprite =',
-                currentName,
-                ', variable id =',
-                variable.id
-              )
-            } else variable.value = obfuscatedVariableName[variable.id]
-          } else if (block.opcode === 'procedures_call' && block.mutation) {
+          // if (
+          //   block.opcode === 'data_variable' ||
+          //   block.opcode === 'data_listcontents'
+          // ) {
+          //   const variable = block.fields.LIST ?? block.fields.VARIABLE
+          //   if (!(variable.value in obfuscatedVariableName)) {
+          //     console.error(
+          //       '❓ Non-existent variable name',
+          //       variable.value,
+          //       ', block id =',
+          //       blockId,
+          //       ', sprite =',
+          //       currentName,
+          //       ', variable id =',
+          //       variable.id
+          //     )
+          //   } else variable.value = obfuscatedVariableName[variable.value]
+          // } else
+          if (block.opcode === 'procedures_call' && block.mutation) {
             // 混淆自制积木显示
             if (!(block.mutation.proccode in obfuscatedSignatureName)) {
               obfuscatedSignatureName[block.mutation.proccode] =
@@ -249,6 +237,11 @@ export default class Obfuscator {
               }
               block.fields.VALUE.value =
                 obfuscatedArgumentName[block.fields.VALUE.value]
+            }
+          } else if (block.opcode === 'sensing_of' && block.fields.PROPERTY) {
+            if (block.fields.PROPERTY.value in obfuscatedVariableName) {
+              block.fields.PROPERTY.value =
+                obfuscatedVariableName[block.fields.PROPERTY.value]
             }
           }
         }

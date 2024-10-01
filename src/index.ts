@@ -41,7 +41,6 @@ import compile from './compile'
   class KylinScratch implements Scratch.Extension {
     private enableCompile = true
     private enableObfuscate = true
-    private enableMisc = false
     private compiling = false
     private inputComment?: string
     private inputUUID?: string
@@ -49,13 +48,11 @@ import compile from './compile'
       isKylin: boolean
       isObfuscated: boolean
       isCompiled: boolean
-      miscProtection: boolean
       uuid: string | null
       comment: string | null
     } = {
       isKylin: false,
       isObfuscated: false,
-      miscProtection: false,
       isCompiled: false,
       uuid: null,
       comment: null
@@ -89,10 +86,6 @@ import compile from './compile'
                 {
                   blockType: Scratch.BlockType.LABEL,
                   text: `${this.meta.isCompiled ? '✅' : '❌'} ${Scratch.translate({ id: 'kylin.hint.precompiled', default: 'Precompilation', description: 'Is the project precompiled?' })}`
-                },
-                {
-                  blockType: Scratch.BlockType.LABEL,
-                  text: `${this.meta.miscProtection ? '✅' : '❌'} ${Scratch.translate({ id: 'kylin.hint.miscProtection', default: 'Misc Protection', description: 'Does the project has miscellaneous protection?' })}`
                 },
                 ...(this.meta.comment
                   ? [
@@ -137,11 +130,6 @@ import compile from './compile'
                     text: `${this.enableCompile ? '✅' : '❌'} ${Scratch.translate({ id: 'kylin.hint.precompiled', default: 'Precompilation', description: 'Enable/disable precompilation.' })}`,
                     func: 'switchPrecompile'
                   },
-                  {
-                    blockType: Scratch.BlockType.BUTTON,
-                    text: `${this.enableMisc ? '✅' : '❌'} ${Scratch.translate({ id: 'kylin.hint.miscProtection', default: 'Misc Protection', description: 'Enable/disable miscellaneous protection.' })}`,
-                    func: 'switchMisc'
-                  },
                   '---' as const,
                   {
                     blockType: Scratch.BlockType.BUTTON,
@@ -176,11 +164,6 @@ import compile from './compile'
     switchPrecompile() {
       if (this.compiling) return
       this.enableCompile = !this.enableCompile
-      vm.extensionManager.refreshBlocks()
-    }
-    switchMisc() {
-      if (this.compiling) return
-      this.enableMisc = !this.enableMisc
       vm.extensionManager.refreshBlocks()
     }
     comment() {
@@ -220,7 +203,6 @@ import compile from './compile'
       const _step = runtime._step
       runtime._step = function () {}
       if (this.enableObfuscate) Obfuscator.obfuscate(runtime)
-      if (this.enableMisc) Obfuscator.miscProtection(runtime)
       if (this.enableCompile) await compile(runtime)
 
       Obfuscator.addMeta(runtime, {

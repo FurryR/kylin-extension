@@ -218,8 +218,8 @@ export default async function compile(runtime: VM.Runtime) {
             await minify(
               `(${async function (
                 Scratch: typeof globalThis.Scratch,
-                sourceMap: string[],
-                version: string
+                version: string,
+                sourceMap: string[]
               ) {
                 if (Scratch.extensions.unsandboxed === false) {
                   throw new Error(
@@ -468,7 +468,7 @@ export default async function compile(runtime: VM.Runtime) {
                   }
                 }
                 Scratch.extensions.register(new Kylin())
-              }.toString()})(Scratch, ${JSON.stringify(compiledCode)}, ${JSON.stringify(version)})`
+              }.toString()})(Scratch, ${JSON.stringify(version)}, ${JSON.stringify(compiledCode)})`
             )
           ).code
         }`
