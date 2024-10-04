@@ -1,4 +1,4 @@
-// Name: 
+// Name: Kylin
 // ID: kylin
 // Description: Tool to obfuscate your Scratch project.
 // By: FurryR
