@@ -16,7 +16,6 @@ It is extremely useful for packagers.
 
 - Classical obfuscation. Mangles variables, lists and procedures, and then make them invisible.
 - Precompilation. Compiles entire project into uglified Javascript (terser), to make it impossible to recover (**may cause 10% performance decrease**). This obfuscation method is incompatible with some advanced extensions, such as `lpp`.
-- Additional miscellaneous protections (**anti-Gandi** protection, anti-saving protection working in progress).
 - Project signature. Adds an invisible "watermark" to your project to let you track them.
 
 ## How to use
