@@ -20,7 +20,7 @@ It is extremely useful for packagers.
 
 ## How to use
 
-After opening the project, navigate to `Custom Extension`. Click `Files`, and then select `kylin.js`. Make sure `Run without sandbox` is checked.
+After opening the project, navigate to `Custom Extension`, and install the extension from `https://furryr.github.io/kylin-extension/kylin.js`. Make sure `Run without sandbox` is checked.
 
 If the project is already obfuscated, you can view the project's metadata. Otherwise, you will be able to adjust obfuscation preferences. When everything is ready, click `Proceed` and Kylin will automatically load the obfuscated version into your editor.
 
