@@ -8,7 +8,7 @@ export default defineConfig({
   outDir: 'dist',
   banner: {
     // Replace it with your extension's metadata
-    js: `// Name: 
+    js: `// Name: Kylin
 // ID: kylin
 // Description: Tool to obfuscate your Scratch project.
 // By: FurryR
