@@ -15,7 +15,7 @@ export default class Obfuscator {
         state = 0
       }
     }
-    return InvisibleUUID.random() + final
+    return InvisibleUUID.random() + final + '%'
   }
   static fetchMeta(targets: VM.Target[]) {
     let result: {
