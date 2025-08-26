@@ -199,7 +199,8 @@ import compile from './compile'
     }
     async start() {
       this.compiling = true
-      vm.extensionManager.refreshBlocks()
+      await vm.extensionManager.refreshBlocks()
+      await new Promise(r => requestIdleCallback(r))
       const _step = runtime._step
       runtime._step = function () {}
       if (this.enableObfuscate) Obfuscator.obfuscate(runtime)
