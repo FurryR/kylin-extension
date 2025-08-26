@@ -1054,7 +1054,7 @@
   };
 
   // package.json
-  var version = "1.0.0";
+  var version = "1.1.0";
 
   // node_modules/uuid/dist/esm-browser/stringify.js
   var byteToHex = [];
@@ -29043,6 +29043,7 @@
         }
       }
     }
+    runtime.setCompilerOptions({ enabled: true, warpTimer: false });
     console.log("\u{1F916} Compiling the project");
     runtime.precompile();
     console.groupCollapsed("\u{1F6E0}\uFE0F Rebuilding the project with compiled code");
@@ -29177,6 +29178,16 @@ ${(await minify(
               }
               const vm = Scratch2.vm;
               const runtime2 = vm.runtime;
+              const _setCompilerOptions = runtime2.setCompilerOptions;
+              runtime2.setCompilerOptions = function(options) {
+                return _setCompilerOptions.call(
+                  this,
+                  Object.assign({}, options, {
+                    warpTimer: false,
+                    enabled: true
+                  })
+                );
+              };
               if (!runtime2.precompile) {
                 alert(
                   "No compiler available. Please run this project on Turbowarp."
@@ -29193,91 +29204,61 @@ ${(await minify(
                   "kylinRuntime.compile": "(\u30B3\u30F3\u30D1\u30A4\u30EB\u6E08)"
                 }
               });
-              const [baseRuntime, runtimeFunctions] = await (async () => {
-                const code = await (await fetch(
-                  "https://cdn.jsdelivr.net/gh/turbowarp/scratch-vm@develop/src/compiler/jsexecute.js"
-                )).text();
-                return new Function(
-                  "require",
-                  "module",
-                  code + ";return [baseRuntime, runtimeFunctions]"
-                )(() => void 0, { exports: {} });
-              })();
-              const compatBlockUtilityCode = await (async () => {
-                return (await fetch(
-                  "https://cdn.jsdelivr.net/gh/turbowarp/scratch-vm@develop/src/compiler/compat-block-utility.js"
-                )).text();
-              })();
-              function requireCompatBlockUtility(util) {
-                if (requireCompatBlockUtility.cache)
-                  return requireCompatBlockUtility.cache;
-                const module = { exports: {} };
-                new Function("require", "module", compatBlockUtilityCode)(
-                  () => util.constructor,
-                  module
-                );
-                return requireCompatBlockUtility.cache = module.exports;
-              }
-              requireCompatBlockUtility.cache = null;
-              const procedureCache = {};
-              const insertRuntime = (source) => {
-                let result = baseRuntime;
-                for (const functionName of Object.keys(runtimeFunctions)) {
-                  if (source.includes(functionName)) {
-                    result += `${runtimeFunctions[functionName]};`;
-                  }
-                }
-                result += `return ${source}`;
-                return result;
-              };
-              const globalState = {
-                Cast: Scratch2.Cast,
-                log: {},
-                thread: null,
-                Timer: null,
-                blockUtility: null
-              };
-              const kylinCompilerExecute = (thread) => {
-                globalState.thread = thread;
-                const result = thread.kylin.next();
-                if (result.done && thread.status === thread.constructor.STATUS_RUNNING) {
-                  thread.target.runtime.sequencer.retireThread(thread);
-                }
-              };
-              function kylinCompileGenerator(code) {
-                return new Function("globalState", insertRuntime(code))(
-                  globalState
-                );
-              }
               console.groupCollapsed(`\u{1F6E0}\uFE0F Kylin Runtime v${version2}`);
               console.log("Kylin is based on Turbowarp compiler.");
               console.log("Kylin is distributed under the AGPL-3.0 license.");
               console.log("Copyright (c) 2024 FurryR, inspired by VeroFess");
-              console.groupCollapsed("\u{1F43A} Precompiling function cache");
-              const functionMap = sourceMap.map((v, index, arr) => {
-                console.log(
-                  `\u{1F996} Compiled function (${index + 1}/${arr.length})`
+              const warn = console.warn;
+              console.warn = function() {
+              };
+              const { JSGenerator, IRGenerator } = vm.exports.i_will_not_ask_for_help_when_these_break();
+              console.warn = warn;
+              JSGenerator.prototype.descendStack = function() {
+              };
+              IRGenerator.prototype.generate = function() {
+                for (const block of Object.values(
+                  this.blocks._blocks
+                ).filter((v) => v.opcode === "procedures_prototype")) {
+                  const signature = `${block.mutation.proccode}`;
+                  const definition = this.blocks.getBlock(
+                    block.parent
+                  );
+                  if (!definition.next) continue;
+                  this.procedures["W" + signature] = this.procedures["Z" + signature] = {
+                    topBlockId: block.parent,
+                    isWarp: block.mutation.warp === "true",
+                    isProcedure: true,
+                    warpTimer: false
+                  };
+                }
+                return {
+                  entry: {
+                    topBlockId: this.thread.topBlock,
+                    isWarp: false,
+                    isProcedure: false,
+                    warpTimer: false
+                  },
+                  procedures: this.procedures
+                };
+              };
+              JSGenerator.prototype.createScriptFactory = function() {
+                const topBlock = this.target.blocks.getBlock(
+                  this.script.topBlockId
                 );
-                return kylinCompileGenerator(v);
-              });
-              console.log("\u2B50 Done!");
-              console.groupEnd();
+                const topBlockNext = topBlock?.next ? this.target.blocks.getBlock(topBlock.next) : null;
+                if (!topBlockNext) {
+                  return `(function(){return function*(){retire();return;};})`;
+                }
+                if (topBlockNext?.opcode === "kylinRuntime_compile") {
+                  return `(${sourceMap[parseInt(topBlockNext.fields.code.value)]})`;
+                }
+                throw new Error("Not a Kylin-compiled script");
+              };
+              vm.runtime.precompile();
+              console.log("\u{1F527} Precompiled code cache");
               console.groupEnd();
               class Kylin {
                 constructor() {
-                  const Sequencer = vm.runtime.sequencer.constructor;
-                  const _stepThread = Sequencer.prototype.stepThread;
-                  Sequencer.prototype.stepThread = function(thread) {
-                    if (thread.kylin) {
-                      kylinCompilerExecute(thread);
-                    } else {
-                      _stepThread.call(this, thread);
-                      if (thread.kylin && thread.status === thread.constructor.STATUS_YIELD_TICK) {
-                        thread.status = thread.constructor.STATUS_RUNNING;
-                        kylinCompilerExecute(thread);
-                      }
-                    }
-                  };
                 }
                 getInfo() {
                   return {
@@ -29313,73 +29294,8 @@ ${(await minify(
                   link.target = "_blank";
                   link.click();
                 }
-                compile({ code }, util) {
-                  const thread = util.thread;
-                  if (!globalState.Timer) {
-                    util.startStackTimer(0);
-                    globalState.blockUtility = requireCompatBlockUtility(util);
-                    globalState.Timer = util.stackFrame.timer.constructor;
-                    delete util.stackFrame.timer;
-                  }
-                  const fn = functionMap[Number(code)](thread);
-                  if (fn instanceof function* () {
-                  }.constructor) {
-                    thread.kylin = fn();
-                  } else {
-                    thread.kylin = function* () {
-                      return fn();
-                    }();
-                  }
-                  thread.procedures = new Proxy(
-                    {},
-                    {
-                      get(_, procedureSignature) {
-                        if (typeof procedureSignature === "symbol")
-                          throw new Error("Unexpected procedure signature");
-                        let realSignature = procedureSignature.substring(1);
-                        const spriteName = thread.target.sprite.name;
-                        if (spriteName in procedureCache && realSignature in procedureCache[spriteName]) {
-                          return procedureCache[spriteName][realSignature](
-                            thread
-                          );
-                        }
-                        const prototypes = Object.values(
-                          thread.blockContainer._blocks
-                        ).filter(
-                          (v) => v.opcode === "procedures_definition"
-                        ).map(
-                          (v) => thread.blockContainer._blocks[v.inputs.custom_block.block]
-                        );
-                        for (const prototype of prototypes) {
-                          const rawSignature = prototype.mutation.proccode;
-                          if (realSignature === rawSignature) {
-                            const definition = thread.blockContainer._blocks[prototype.parent];
-                            const compileCode = definition.next ? thread.blockContainer._blocks[definition.next] : null;
-                            if (compileCode && compileCode.opcode === "kylinRuntime_compile") {
-                              if (!(spriteName in procedureCache))
-                                procedureCache[spriteName] = {};
-                              return (procedureCache[spriteName][realSignature] = functionMap[Number(compileCode.fields.code.value)])(thread);
-                            }
-                            break;
-                          }
-                        }
-                        return function() {
-                          console.error(
-                            `Kylin: Unknown procedure signature ${procedureSignature}`
-                          );
-                          return {
-                            [Symbol.iterator]: () => ({
-                              next: () => ({
-                                done: true,
-                                value: ""
-                              })
-                            })
-                          };
-                        };
-                      }
-                    }
-                  );
-                  return util.yieldTick();
+                compile() {
+                  throw new Error("This block should never be executed.");
                 }
               }
               Scratch2.extensions.register(new Kylin());
@@ -29579,7 +29495,8 @@ ${(await minify(
       }
       async start() {
         this.compiling = true;
-        vm.extensionManager.refreshBlocks();
+        await vm.extensionManager.refreshBlocks();
+        await new Promise((r) => requestIdleCallback(r));
         const _step = runtime._step;
         runtime._step = function() {
         };
