@@ -43,3 +43,9 @@ Kylin 是业界第一个用于 Scratch (Turbowarp) 的混淆器，允许你 _加
 ## 开源协议和著作权声明
 
 Kylin 以 AGPL-3.0-only 协议分发。基于 Turbowarp 编译器。作者 FurryR，启发自 VeroFess。`Kylin` 这个名字来自于我的一个朋友，`@F_Qilin` (https://x.com/F_Qilin)，又称 CyanKylin。
+
+### 有关[合理使用](https://zh.wikipedia.org/wiki/%E5%90%88%E7%90%86%E4%BD%BF%E7%94%A8)
+
+虽然本项目以 AGPL-3.0-only 协议分发，但编译后的项目和一并捆绑的 `Kylin runtime` 并不在此列。你可以在任何**个人**项目中使用编译后的代码和运行时环境，包括商业项目，且不受任何限制。在这种情况下，它被视为*合理使用*。但是，若需要修改 `Kylin runtime` 或作为单独的产品进行再分发或再发布则需要遵循开源许可证。企业使用不属于合理使用的范畴，并且根据许可协议是被禁止的。
+
+如果你符合上述合理使用的条件，并且愿意的话，请在你的项目中注明你使用了 Kylin。这样可以帮助更多人了解 Kylin。谢谢！

@@ -43,3 +43,9 @@ Available languages:
 ## License and Copyright
 
 AGPL-3.0-only. Powered by Turbowarp compiler. Authored by FurryR, inspired by VeroFess. the name `Kylin` comes from one of my friends, `@F_Qilin` (https://x.com/F_Qilin) aka CyanKylin.
+
+### About [fair use](https://en.wikipedia.org/wiki/Fair_use)
+
+Although this project is licensed under AGPL-3.0-only, the compiled project itself and bundled `Kylin runtime` are not. You can use the compiled code and runtime in any **personal** projects, including commercial ones, without any restrictions. In this case it is treated as _Fair use_. However, modifying the `Kylin runtime` or redistributing or republishing it as a separate product requires compliance with the open source license. Corporate use does not fall under fair use and is prohibited under the license agreement.
+
+If you meet the above fair use conditions and are willing, it would be great if you indicate that you used Kylin in your project. This can help more people learn about Kylin. Thank you!
